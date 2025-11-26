@@ -27,7 +27,9 @@ jobs:
         run: npm install
 
       - name: 构建项目
-        run: NODE_OPTIONS="--openssl-legacy-provider --max_old_space_size=4096" npm run build
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        run: node --openssl-legacy-provider ./node_modules/.bin/vue-cli-service build
 
       - name: 添加 CNAME 文件
         run: echo "kalman.l2k.tech" > dist/CNAME
