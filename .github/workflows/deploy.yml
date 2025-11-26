@@ -1,0 +1,41 @@
+name: 部署到 GitHub Pages
+
+on:
+  push:
+    branches:
+      - develop  # 当推送到 develop 分支时触发
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write  # 允许推送到 gh-pages 分支
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建项目
+        run: NODE_OPTIONS=--openssl-legacy-provider npm run build
+
+      - name: 添加 CNAME 文件
+        run: echo "kalman.l2k.tech" > dist/CNAME
+
+      - name: 部署到 GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages  # 部署到 gh-pages 分支
+          cname: kalman.l2k.tech
