@@ -1,12 +1,35 @@
 <template>
 	<div>
-		<h1 class="title">Kalman Filter 2D demo</h1>
-		<h3 class="subtitle">Antonio Vivace, June 2019</h3>
+		<h1 class="title">卡尔曼滤波器 2D 演示</h1>
+		<h3 class="subtitle">交互式噪声过滤演示 - 实时可视化</h3>
 		<mu-row gutter class="stats">
 			<mu-col style="font-size:16px;" sm="0" md="1" lg="2" span="12"></mu-col>
 			<mu-col style="font-size:18px;" sm="12" md="10" lg="8" span="12">
 				<center>
-					Green points are artificially generated applying noise to the real input path according to the set covariance. This dirty path is then fed into the Kalman algorithm, which proceeds to clean it up. Finally, the filtered path is shown in red. Check <a href="https://courses.engr.illinois.edu/ece420/sp2017/UnderstandingKalmanFilter.pdf">here</a> for an intuitive explanation of the math behind this. <br><br>Select "Mouse" as mode and then hover your mouse on the canvas to draw the path yourself.</center>
+					<h3 style="color:#388e3c; font-weight: 600;">🟢 绿色点 = 带噪声的轨迹</h3>
+					<p style="line-height: 1.8;">程序会给真实路径人为添加随机噪声（就像信号干扰），生成绿色的"脏数据"点。这些点看起来会很杂乱抖动。</p>
+
+					<h3 style="color:#dd2c00; font-weight: 600;">🔴 红色点 = 过滤后的轨迹</h3>
+					<p style="line-height: 1.8;">卡尔曼滤波算法会分析绿色的噪声数据，通过数学计算"猜测"出真实的轨迹，最终生成平滑的红色路径。这就像从嘈杂的录音中还原清晰的声音。</p>
+
+					<div style="background-color:#f5f5f5; padding:15px; border-radius:8px; margin:15px 0;">
+						<h4 style="margin-top:0;">💡 简单理解卡尔曼滤波器</h4>
+						<p style="line-height: 1.8; text-align: left;">
+							想象你在雾天开车，视线模糊（噪声干扰）。卡尔曼滤波器就像一个聪明的副驾驶：<br>
+							✓ 它记住之前的路线（历史数据）<br>
+							✓ 观察当前模糊的路况（当前测量）<br>
+							✓ 结合两者推测出最可能的真实路径（最优估计）<br><br>
+							这个算法在1960年代被用于阿波罗登月计划的导航系统，现在广泛应用于GPS定位、自动驾驶、手机陀螺仪等领域。
+						</p>
+					</div>
+
+					<p style="font-size:16px; background-color:#e3f2fd; padding:10px; border-radius:5px;">
+						<strong>👆 操作提示：</strong>选择"鼠标"模式，然后在画布上移动鼠标，就可以亲手绘制路径，观察过滤效果！
+					</p>
+					<p style="font-size:14px; margin-top:10px;">
+						<a href="https://courses.engr.illinois.edu/ece420/sp2017/UnderstandingKalmanFilter.pdf">点击这里</a> 查看算法的详细数学解释（英文PDF）
+					</p>
+				</center>
 			</mu-col>
 			<mu-col style="font-size:16px;" sm="0" md="1" lg="2" span="12"></mu-col>
 		</mu-row><br>
@@ -18,43 +41,52 @@
 						<mu-icon :value="startBtnIcon"></mu-icon>{{ startBtnText }}
 					</mu-button>&nbsp;
 					<mu-button @click="init" color="red">
-						<mu-icon value="undo"></mu-icon> Reset
+						<mu-icon value="undo"></mu-icon> 重置
 					</mu-button>
 					<br /><br />
-					Mode:
+					<h4 style="margin-bottom: 10px;">🎮 控制面板</h4>
+					<strong>运动模式：</strong>
 					<mu-select @change="init" v-model="mode">
 						<mu-option v-for="(option, index) in options" :key="option" :label="option" :value="index"></mu-option>
 					</mu-select>
+					<small style="display:block; margin-top:5px; color:#666;">选择不同的路径生成方式</small>
 					<br />
-					(Target) Frame Rate: <b>{{ framerate }}</b> FPS
+					<strong>目标帧率：</strong> <b>{{ framerate }}</b> FPS
 					<mu-slider type="range" :min="0" :max="80" :step="1" value="50" class="slider" v-model="framerate" />
-					TTL: <b>{{ ttl }} </b> frames
+					<small style="display:block; margin-top:-10px; color:#666;">数值越高动画越流畅</small>
+
+					<strong>轨迹保留时长：</strong> <b>{{ ttl }}</b> 帧
 					<mu-slider type="range" :min="0" :max="200" :step="1" value="50" class="slider" v-model="ttl" />
-					Noise covariance σ: <b>{{ sigma }}</b>
+					<small style="display:block; margin-top:-10px; color:#666;">每个点在画布上保留的帧数</small>
+
+					<strong>噪声强度 σ：</strong> <b>{{ sigma }}</b>
 					<mu-slider :min="0" :max="width / 3" :step="1" class="demo-slider" v-model="sigma"></mu-slider>
-					Prediction Steps : <b>{{ predSteps }}</b>
+					<small style="display:block; margin-top:-10px; color:#666;">数值越大，绿色点越杂乱（噪声越大）</small>
+
+					<strong>预测步数：</strong> <b>{{ predSteps }}</b>
 					<mu-slider :min="1" :max="50" :step="1" class="demo-slider" v-model="predSteps"></mu-slider>
+					<small style="display:block; margin-top:-10px; color:#666;">算法向未来预测的步数</small>
 					<!--
 					<mu-checkbox
 						v-model="traj"
 						label="Trajectory"
 					></mu-checkbox>-->
-					Show:<br>
-					<mu-checkbox v-model="drawReal" label="Real Path"></mu-checkbox>
-					<mu-checkbox v-model="drawNoisy" label="Noisy"></mu-checkbox>
-					<mu-checkbox v-model="drawNoisyTraj" label="Noisy Path"></mu-checkbox><br>
-					<mu-checkbox v-model="drawFiltered" label="Filtered"></mu-checkbox>
-					<mu-checkbox v-model="drawFilteredTraj" label="Filtered Path"></mu-checkbox>
-					<mu-checkbox v-model="prediction" label="Prediction"></mu-checkbox>
+					<br><strong>显示选项：</strong><br>
+					<mu-checkbox v-model="drawReal" label="真实路径（蓝色）"></mu-checkbox>
+					<mu-checkbox v-model="drawNoisy" label="噪声点（绿色）"></mu-checkbox>
+					<mu-checkbox v-model="drawNoisyTraj" label="噪声轨迹线"></mu-checkbox><br>
+					<mu-checkbox v-model="drawFiltered" label="过滤后的点（红色）"></mu-checkbox>
+					<mu-checkbox v-model="drawFilteredTraj" label="过滤后的轨迹线"></mu-checkbox>
+					<mu-checkbox v-model="prediction" label="未来预测（白色）"></mu-checkbox>
 					<br><br>
-					Canvas<br>
-					Width: {{ width }}px<br />
+					<strong>画布信息</strong><br>
+					宽度：{{ width }}px<br />
 					<mu-slider v-if="showCanvasControls" type="range" :min="0" :max="1800" :step="1" value="75" class="slider" v-model="widthC" />
-					Height: {{ height }}px<br />
+					高度：{{ height }}px<br />
 					<mu-slider v-if="showCanvasControls" type="range" :min="0" :max="1000" :step="1" value="75" class="slider" v-model="height" /><br>
-					status: <code>{{ status }}</code><br />
-					<code>{{ states.length }}</code> states drawn.<br />
-					<code>{{ Math.round(ms) }}</code> ms per frame
+					状态：<code>{{ status }}</code><br />
+					已绘制 <code>{{ states.length }}</code> 个状态<br />
+					每帧耗时 <code>{{ Math.round(ms) }}</code> 毫秒
 				</div>
 			</mu-col>
 			<mu-col sm="12" md="12" lg="8" span="12">
@@ -69,15 +101,28 @@
 			<mu-col style="font-size:16px;" sm="0" md="1" lg="2" span="12"></mu-col>
 			<mu-col style="font-size:16px;" sm="12" md="10" lg="8" span="12">
 				<center>
-					<i>Kalman Filter is an algorithm that uses a series of measurements observed over time, containing statistical noise and other inaccuracies, and produces estimates of unknown variables that tend to be more accurate than those based on a single measurement alone, by estimating a joint probability distribution over the variables for each timeframe. Earliest applications include the <a href="https://github.com/chrislgarry/Apollo-11/blob/master/Luminary099/KALMAN_FILTER.agc">1969 Apollo 11 software</a>.</i></center>
+					<div style="background-color:#fff3e0; padding:20px; border-radius:8px; border-left:4px solid #ff6f00;">
+						<h4 style="margin-top:0;">📚 什么是卡尔曼滤波器？</h4>
+						<i style="line-height: 1.8;">卡尔曼滤波器是一种算法，它通过分析一系列包含噪声和误差的测量数据，估算出比单次测量更准确的真实值。它会为每个时间点的变量估算一个联合概率分布。最早的应用包括 <a href="https://github.com/chrislgarry/Apollo-11/blob/master/Luminary099/KALMAN_FILTER.agc">1969年阿波罗11号登月软件</a>。<br><br>
+						<strong>现实应用举例：</strong><br>
+						🛰️ <strong>GPS定位</strong>：你的手机GPS信号有误差，卡尔曼滤波让导航更准确<br>
+						🚗 <strong>自动驾驶</strong>：汽车传感器数据有噪声，算法帮助判断真实位置<br>
+						📱 <strong>手机陀螺仪</strong>：游戏中的运动检测需要过滤掉手抖动的干扰<br>
+						🎯 <strong>导弹追踪</strong>：军事雷达数据有干扰，需要准确预测目标位置
+						</i>
+					</div>
+				</center>
 			</mu-col>
 			<mu-col style="font-size:16px;" sm="0" md="1" lg="2" span="12"></mu-col>
 		</mu-row>
 		<mu-col style="font-size:14px; padding-left: 15%;padding-right: 15%" sm="12" md="12" lg="12" span="12"> <br><br></mu-col>
 		<small style="font-size:1rem">
 			<p>
-				<a style="color:#2c3e50;" href="https://github.com/avivace/kalman">
-					<img style="vertical-align: text-bottom;" height="24px" src="https://akveo.github.io/eva-icons/outline/svg/github-outline.svg" />&nbsp;Source Code</a>,<a style="color:#2c3e50;" href="https://github.com/avivace/kalman/blob/develop/slides.pdf"> slides</a>, <a style="color:#2c3e50;" href="https://github.com/avivace/kalman#references-and-papers"> references </a>
+				<a style="color:#2c3e50;" href="https://github.com/q442333521/kalman">
+					<img style="vertical-align: text-bottom;" height="24px" src="https://akveo.github.io/eva-icons/outline/svg/github-outline.svg" />&nbsp;源代码</a> | <a style="color:#2c3e50;" href="https://github.com/avivace/kalman/blob/develop/slides.pdf">演示文稿</a> | <a style="color:#2c3e50;" href="https://github.com/avivace/kalman#references-and-papers">参考文献</a>
+			</p>
+			<p style="font-size:0.85rem; color:#888;">
+				原作者：Antonio Vivace | 中文汉化版
 			</p>
 		</small>
 	</div>
@@ -174,11 +219,11 @@ export default {
 		last: null,
 		ms: 0,
 		mode: 1,
-		options: ["Mouse", "Square Path", "1D", "Random Path"],
+		options: ["鼠标", "方形路径", "一维运动", "随机路径"],
 		realPoint: null,
 		drawPhase: 0,
 		sigma: 15,
-		startBtnText: "Start",
+		startBtnText: "开始",
 		startBtnIcon: "play_arrow",
 		startBtnColor: "blue",
 		traj: false,
@@ -209,11 +254,11 @@ export default {
 			this.showCanvasControls = false;
 			if (this.status == "paused") {
 				this.status = "running";
-				this.startBtnText = "Pause";
+				this.startBtnText = "暂停";
 				this.startBtnIcon = "pause";
 			} else {
 				this.status = "paused";
-				this.startBtnText = "Start";
+				this.startBtnText = "开始";
 				this.startBtnIcon = "play_arrow";
 			}
 		},
