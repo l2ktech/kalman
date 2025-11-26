@@ -12,15 +12,39 @@
           active-class="active"
         >
           <span class="nav-icon">📊</span>
-          <span class="nav-text">卡尔曼滤波器</span>
+          <span class="nav-text">卡尔曼滤波</span>
         </router-link>
         <router-link
           to="/pid"
           class="nav-item"
           active-class="active"
         >
+          <span class="nav-icon">🎮</span>
+          <span class="nav-text">PID 控制</span>
+        </router-link>
+        <router-link
+          to="/forward-kinematics"
+          class="nav-item"
+          active-class="active"
+        >
+          <span class="nav-icon">🦾</span>
+          <span class="nav-text">正运动学</span>
+        </router-link>
+        <router-link
+          to="/astar"
+          class="nav-item"
+          active-class="active"
+        >
+          <span class="nav-icon">🗺️</span>
+          <span class="nav-text">A* 寻路</span>
+        </router-link>
+        <router-link
+          to="/inverse-kinematics"
+          class="nav-item"
+          active-class="active"
+        >
           <span class="nav-icon">🤖</span>
-          <span class="nav-text">PID 控制器</span>
+          <span class="nav-text">逆运动学</span>
         </router-link>
       </nav>
     </div>
