@@ -1,5 +1,6 @@
-if (process.env.NODE_ENV === 'production'){
-	module.exports = {
-			publicPath: '/kalman/'
-		}
+module.exports = {
+	publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
+	outputDir: 'dist',
+	assetsDir: '',
+	productionSourceMap: false
 }
