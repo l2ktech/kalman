@@ -1,15 +1,16 @@
 <template>
 	<div id="app">
-		<Kalman />
+		<NavBar />
+		<router-view />
 	</div>
 </template>
 <script>
-import Kalman from "./components/Kalman.vue";
+import NavBar from "./components/NavBar.vue";
 
 export default {
 	name: "app",
 	components: {
-		Kalman
+		NavBar
 	}
 };
 </script>
@@ -32,6 +33,12 @@ html {
 	-moz-osx-font-smoothing: grayscale;
 	text-align: center;
 	color: #2c3e50;
-	margin-top: 20px;
+	min-height: 100vh;
+	background: linear-gradient(to bottom, #f5f7fa 0%, #ffffff 100%);
+}
+
+body {
+	margin: 0;
+	padding: 0;
 }
 </style>
